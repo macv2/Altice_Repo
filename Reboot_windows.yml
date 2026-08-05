@@ -9,19 +9,3 @@
         msg: "Reiniciando equipo por ansible."
       when: ansible_facts['os_family'] == "Windows"
       
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
