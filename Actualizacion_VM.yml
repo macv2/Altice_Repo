@@ -1,0 +1,117 @@
+---
+- name: Actualizacion de VM
+  hosts: all
+  strategy: free
+  vars:
+    token_prtg: "{{ lookup('env', 'PRTG_TOKEN') }}"
+    vcenter_hostname: "{{ lookup('env', 'VMWARE_HOST') }}"
+    vcenter_username: "{{ lookup('env', 'VMWARE_USER') }}"
+    vcenter_password: "{{ lookup('env', 'VMWARE_PASSWORD') }}"
+ 
+  tasks:
+  
+# Crear Snapshot  
+    - name: Optener TimeStamp
+      command: "date '+%Y-%m-%dT%H:%M:%S'"
+      environment:
+        TZ: America/Santo_Domingo 
+      register: TimeStamp
+      delegate_to: localhost
+
+    - name: Crear Snapshot de la VM
+      vmware_guest_snapshot:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        validate_certs: no
+        datacenter: "{{ datacenter_name }}"
+        folder: "/{{ datacenter_name }}/"
+        name: "{{ inventory_hostname }}"
+        snapshot_name: "{{ inventory_hostname }}.{{ Timestamp.stdout }}"
+        description: "Snapshop creado por Ansible"
+        memory_dump: true
+        state: present
+      delegate_to: localhost
+      
+# Actualizar SO      
+    - name: Actualizar todos los paquetes en linux
+      yum:
+        name: "*"
+        state: latest
+      when: ansible_facts['os_family'] != "Windows"
+      environment:
+        https_proxy: http://acapsrv02d.asociacioncibao.com.do:3128
+        http_proxy: http://acapsrv02d.asociacioncibao.com.do:3128
+      become: true
+    
+    - name: Actualizar servidor windows
+      win_updates:
+        reboot: no
+      when: ansible_facts['os_family'] == "Windows"
+
+# Obtener PRTG sensors 
+    - name: Obtener info de la VM para PRTG
+      vmware_guest_info:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        validate_certs: no
+        datacenter: "{{ datacenter_name }}"
+        folder: "/{{ datacenter_name }}/"
+        name: "{{ inventory_hostname }}"
+        schema: vsphere
+        properties:
+          - guest.ipStack
+      delegate_to: localhost
+      register: vm_info
+
+    - name: Guardar variable hostname de la VM
+      set_fact:
+        hostName: "{{ vm_info.instance.guest.ipStack.0.dnsConfig.hostName }}"
+
+    - name: Get objectID of the host
+      uri:
+        url: https://acaprtg01d.asociacioncibao.com.do/api/table.json?content=devices&columns=objid&filter_name={{ hostName }}&apitoken={{ token_prtg }}
+        return_content: yes
+        validate_certs: no
+      delegate_to: localhost
+      register: prtg_sensors
+      no_log: true
+
+    - name: Presentar ID del Sensor
+      debug:
+        msg: "ObjectID del Sensor: {{ prtg_sensors.json.devices[0].objid }}"
+      when: prtg_sensors.json.devices[0].objid is defined 
+
+#Pause PRTG sensors
+    - name: Pause PRTG sensors of the host
+      uri:
+        url: https://acaprtg01d.asociacioncibao.com.do/api/pauseobjectfor.htm?id={{ prtg_sensors.json.devices[0].objid }}&duration=60&pausemsg=Detenido_por_Ansible&apitoken={{ token_prtg }}
+        return_content: yes
+        validate_certs: no
+      delegate_to: localhost
+      when: prtg_sensors.json.devices[0].objid is defined
+      no_log: true
+      
+#Reboot VM
+    - name: rebotear el servidor Linux con timeout de 1 Hr
+      reboot:
+        reboot_timeout: 3600
+      become: true  
+      when: ansible_facts['os_family'] != "Windows"
+
+    - name: Reiniciar VM windows con timeout de 1 Hr
+      win_reboot:
+        reboot_timeout: 3600
+        msg: "Reiniciando equipo por ansible."
+      when: ansible_facts['os_family'] == "Windows"
+        
+# Resume PRTG sensors      
+    - name: Resume PRTG sensors of the host
+      uri:
+        url: https://acaprtg01d.asociacioncibao.com.do/api/pauseobjectfor.htm?id={{ prtg_sensors.json.devices[0].objid }}&action=1&pausemsg=Resumido_por_Ansible&apitoken={{ token_prtg }}
+        return_content: yes
+        validate_certs: no
+      delegate_to: localhost        
+      when: prtg_sensors.json.devices[0].objid is defined      
+      no_log: true

@@ -1,0 +1,24 @@
+---
+- name: Rebotear Linux VM
+  hosts: "{{ grupo }}"
+
+  tasks:
+    - name: rebotear el servidor Linux
+      reboot:
+        reboot_timeout: 3600
+      when: ansible_facts['os_family'] != "Windows"
+      become: true
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      

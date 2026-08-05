@@ -1,0 +1,14 @@
+---
+- name: Actualizacion de SO de VM
+  hosts: "{{ grupo }}"
+
+  tasks:
+    - name: Actualizar todos los paquetes en linux
+      yum:
+        name: "*"
+        state: latest
+      when: ansible_facts['os_family'] != "Windows"
+      environment:
+        https_proxy: http://acapsrv02d.asociacioncibao.com.do:3128
+        http_proxy: http://acapsrv02d.asociacioncibao.com.do:3128
+      become: true

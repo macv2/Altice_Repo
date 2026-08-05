@@ -1,0 +1,10 @@
+---
+- name: Actualizacion de SO de VM
+  hosts: "{{ grupo }}"
+
+  tasks:
+    - name: Actualizar servidor windows
+      win_updates:
+        reboot: no
+      when: ansible_facts['os_family'] == "Windows"
+      register: result

@@ -1,0 +1,35 @@
+---
+- name: Crear Snapshoot de VM
+  hosts: all
+  connection: local
+  gather_facts: no
+
+  tasks:
+    - name: Optener TimeStamp
+      command: "date '+%Y-%m-%dT%H:%M:%S'"
+      environment:
+        TZ: America/Santo_Domingo
+      delegate_to: localhost
+      run_once: true
+      register: TimeStamp
+
+    - name: Crear Snapshot de la VM
+      vmware_guest_snapshot:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        validate_certs: no
+        datacenter: "{{ datacenter_name }}"
+        folder: "/{{ datacenter_name }}/"
+        name: "{{ inventory_hostname }}"
+        snapshot_name: "{{ inventory_hostname }}.{{ TimeStamp.stdout }}"
+        description: "Snapshop creado por Ansible"
+        memory_dump: true
+        state: present
+      delegate_to: localhost
+
+
+
+
+
+

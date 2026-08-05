@@ -1,0 +1,27 @@
+---
+- name: Rebotear Windows VM
+  hosts: "{{ grupo }}"
+  
+  tasks:
+    - name: Reiniciar VM windows con timeout de 1 Hr
+      win_reboot:
+        reboot_timeout: 3600
+        msg: "Reiniciando equipo por ansible."
+      when: ansible_facts['os_family'] == "Windows"
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
