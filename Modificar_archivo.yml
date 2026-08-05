@@ -1,0 +1,46 @@
+---
+- name: Modificar archivo
+  hosts: all
+  gather_facts: no
+  become: yes
+
+  tasks:
+    
+    - name: Editar linea use_fully_qualified_names en sssd.conf
+      lineinfile:
+        path: /etc/sssd/sssd.conf
+        regexp: 'use_fully_qualified_names = True'
+        line: 'use_fully_qualified_names = False'
+        state: present
+
+    - name: Editar linea fallback_homedir en sssd.conf
+      lineinfile:
+        path: /etc/sssd/sssd.conf
+        regexp: 'fallback_homedir = /home/%u@%d'
+        line: 'fallback_homedir = /home/%u@'
+        state: present
+
+    - name: Agregar linea a sssd.conf
+      lineinfile:
+        path: /etc/sssd/sssd.conf
+        line: "{{ item }}"
+        state: present
+      loop:
+        - krb5_validate = False
+        - ad_enable_gc = false
+        - ldap_rfc2307_fallback_to_local_users = True
+        - enumerate = false
+        - ldap_use_tokengroups=false
+      notify:
+        - restart sssd
+
+  handlers:
+    - name: restart realmd
+      service:
+        name: realmd
+        state: restarted
+
+    - name: restart sssd
+      service:
+        name: sssd
+        state: restarted
