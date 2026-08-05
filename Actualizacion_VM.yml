@@ -2,11 +2,6 @@
 - name: Actualizacion de VM
   hosts: all
   strategy: free
-  vars:
-    token_prtg: "{{ lookup('env', 'PRTG_TOKEN') }}"
-    vcenter_hostname: "{{ lookup('env', 'VMWARE_HOST') }}"
-    vcenter_username: "{{ lookup('env', 'VMWARE_USER') }}"
-    vcenter_password: "{{ lookup('env', 'VMWARE_PASSWORD') }}"
  
   tasks:
   
@@ -39,9 +34,6 @@
         name: "*"
         state: latest
       when: ansible_facts['os_family'] != "Windows"
-      environment:
-        https_proxy: http://acapsrv02d.asociacioncibao.com.do:3128
-        http_proxy: http://acapsrv02d.asociacioncibao.com.do:3128
       become: true
     
     - name: Actualizar servidor windows
@@ -71,7 +63,7 @@
 
     - name: Get objectID of the host
       uri:
-        url: https://acaprtg01d.asociacioncibao.com.do/api/table.json?content=devices&columns=objid&filter_name={{ hostName }}&apitoken={{ token_prtg }}
+        url: https://prtghost01/api/table.json?content=devices&columns=objid&filter_name={{ hostName }}&apitoken={{ token_prtg }}
         return_content: yes
         validate_certs: no
       delegate_to: localhost
@@ -86,7 +78,7 @@
 #Pause PRTG sensors
     - name: Pause PRTG sensors of the host
       uri:
-        url: https://acaprtg01d.asociacioncibao.com.do/api/pauseobjectfor.htm?id={{ prtg_sensors.json.devices[0].objid }}&duration=60&pausemsg=Detenido_por_Ansible&apitoken={{ token_prtg }}
+        url: https://prtghost01/api/pauseobjectfor.htm?id={{ prtg_sensors.json.devices[0].objid }}&duration=60&pausemsg=Detenido_por_Ansible&apitoken={{ token_prtg }}
         return_content: yes
         validate_certs: no
       delegate_to: localhost
@@ -109,7 +101,7 @@
 # Resume PRTG sensors      
     - name: Resume PRTG sensors of the host
       uri:
-        url: https://acaprtg01d.asociacioncibao.com.do/api/pauseobjectfor.htm?id={{ prtg_sensors.json.devices[0].objid }}&action=1&pausemsg=Resumido_por_Ansible&apitoken={{ token_prtg }}
+        url: https://prtghost01o/api/pauseobjectfor.htm?id={{ prtg_sensors.json.devices[0].objid }}&action=1&pausemsg=Resumido_por_Ansible&apitoken={{ token_prtg }}
         return_content: yes
         validate_certs: no
       delegate_to: localhost        
