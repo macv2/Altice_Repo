@@ -23,7 +23,7 @@
     - {expresion: '^GATEWAY=', linea: 'GATEWAY=10.3.1.254'}
     - {expresion: '^DNS1=', linea: 'DNS1=10.3.1.50'}
     - {expresion: '^DNS2=', linea: 'DNS2=10.6.1.50'}
-    - {expresion: '^DOMAIN=', linea: 'DOMAIN=cevaldom.local'}
+    - {expresion: '^DOMAIN=', linea: 'DOMAIN=dominio01.local'}
 
   - name: Instalar paquetes
     yum:
@@ -47,10 +47,10 @@
       
       
   - name: Verificar conexion 
-    command: realm discover cevaldom.local
+    command: realm discover dominio01.local
     register: respuesta_realm
     failed_when: >
-      ("realm-name: CEVALDOM.LOCAL" not in result.stdout) or
+      ("realm-name: dominio01.LOCAL" not in result.stdout) or
       ("client-software: sssd" not in result.stdout) or
       ("oddjob" not in result.stdout) or
       ("oddjob-mkhomedir" not in result.stdout) or
@@ -62,16 +62,16 @@
    
   - name: Agregar maquina al AD  
     expect:
-      command: realm join --verbose -U 'lsosa@cevaldom.local' cevaldom.local
+      command: realm join --verbose -U 'lsosa@dominio01.local' dominio01.local
       responses:
         Password for *: "{{ contraseña }}"
     become: yes
     register: respuesta_realm        
 
 #alternativas
-# command: /bin/bash -c "/usr/sbin/realm join -U 'lsosa@cevaldom.local' --computer-ou=OU=Linux,OU=Servers,DC=CEVALDOM,DC=LOCAL cevaldom.local"
+# command: /bin/bash -c "/usr/sbin/realm join -U 'lsosa@dominio01.local' --computer-ou=OU=Linux,OU=Servers,DC=DOMINIO01,DC=LOCAL dominio01.local"
 
-# command: realm join -U 'lsosa@cevaldom.local' --computer-ou=OU=Linux,OU=Servers,DC=CEVALDOM,DC=LOCAL cevaldom.local
+# command: realm join -U 'lsosa@dominio01.local' --computer-ou=OU=Linux,OU=Servers,DC=DOMINIO01,DC=LOCAL dominio01.local
 
 
   - name: Cambiar permisos de sssd.conf
@@ -125,13 +125,13 @@
       
 
   - name: permitir que el grupo LinuxAdmins se loguee en el sistema
-    command: /bin/bash -c "/usr/sbin/realm permit -g LinuxAdmins@cevaldom.local"
+    command: /bin/bash -c "/usr/sbin/realm permit -g LinuxAdmins@dominio01.local"
     register: respuesta_realm_permit   
 
   - name: Agregar el grupo LinuxAdmins a sudoers
     lineinfile:
       dest: /etc/sudoers
-      line: '%LinuxAdmins@cevaldom.local        ALL=(ALL)       ALL'
+      line: '%LinuxAdmins@dominio01.local        ALL=(ALL)       ALL'
       insertafter: '^%wheel'
 
 ###############################
