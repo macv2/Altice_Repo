@@ -8,17 +8,3 @@
         reboot_timeout: 3600
       when: ansible_facts['os_family'] != "Windows"
       become: true
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
