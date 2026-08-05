@@ -1,0 +1,14 @@
+- name: reconfigure CPU and RAM of VM
+  vmware_guest:
+    hostname: "{{ vcenter_hostname }}"
+    username: "{{ vcenter_username }}"
+    password: "{{ vcenter_password }}"
+    cluster: "{{ vcenter_cluster }}"
+    datacenter: "{{ vcenter_datacenter }}"
+    name: "{{ vm_name }}"
+    validate_certs: "no"
+    folder: "{{ vm_folder }}"
+    hardware:
+      memory_mb: "{{ memory }}"
+      num_cpus: "{{ cpu }}"
+  delegate_to: "localhost"
